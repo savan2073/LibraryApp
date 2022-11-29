@@ -1,10 +1,13 @@
 package com.example.libraryapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
@@ -12,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.FloatingWindow;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -31,6 +35,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private BookViewModel bookViewModel;
+    public static final int NEW_BOOK_ACTIVITY_REQUEST_CODE = 1;
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -47,6 +52,33 @@ public class MainActivity extends AppCompatActivity {
 
         bookViewModel = new ViewModelProvider(this).get(BookViewModel.class);
         bookViewModel.findAll().observe(this, adapter::setBooks);
+
+        FloatingActionButton addBookButton = findViewById(R.id.add_button);
+        addBookButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, EditBookActivity.class);
+                startActivityForResult(intent, NEW_BOOK_ACTIVITY_REQUEST_CODE);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(requestCode == NEW_BOOK_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK){
+            Book book = new Book(data.getStringExtra(EditBookActivity.EXTRA_EDIT_BOOK_TITLE),
+                    data.getStringExtra(EditBookActivity.EXTRA_EDIT_BOOK_AUTHOR));
+            bookViewModel.insert(book);
+            Snackbar.make(findViewById(R.id.coordinator_layout), getString(R.string.book_added),
+                    Snackbar.LENGTH_LONG).show();
+        }else{
+            Snackbar.make(findViewById(R.id.coordinator_layout),
+                    getString(R.string.empty_not_saved),
+                    Snackbar.LENGTH_LONG)
+                    .show();
+        }
     }
 
     @Override
