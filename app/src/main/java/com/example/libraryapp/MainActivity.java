@@ -36,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
     private BookViewModel bookViewModel;
     public static final int NEW_BOOK_ACTIVITY_REQUEST_CODE = 1;
+    public static final int EDIT_BOOK_ACTIVITY_REQUEST_CODE = 2;
+    private Book editedBook;
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -73,6 +75,15 @@ public class MainActivity extends AppCompatActivity {
             bookViewModel.insert(book);
             Snackbar.make(findViewById(R.id.coordinator_layout), getString(R.string.book_added),
                     Snackbar.LENGTH_LONG).show();
+        }else if (requestCode == EDIT_BOOK_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK){
+            editedBook.setTitle(data.getStringExtra(EditBookActivity.EXTRA_EDIT_BOOK_TITLE));
+            editedBook.setAuthor(data.getStringExtra(EditBookActivity.EXTRA_EDIT_BOOK_AUTHOR));
+            bookViewModel.update(editedBook);
+            editedBook = null;
+            Snackbar.make(findViewById(R.id.coordinator_layout),
+                    getString(R.string.book_edited),
+                    Snackbar.LENGTH_LONG)
+                    .show();
         }else{
             Snackbar.make(findViewById(R.id.coordinator_layout),
                     getString(R.string.empty_not_saved),
@@ -115,15 +126,35 @@ public class MainActivity extends AppCompatActivity {
 
         private TextView bookTitleTextView;
         private TextView bookAuthorTextView;
+        private View bookView;
+        private Book book;
 
         public BookHolder(LayoutInflater inflater, ViewGroup parent){
             super(inflater.inflate(R.layout.book_list_item, parent, false));
 
             bookTitleTextView = itemView.findViewById(R.id.book_title_label);
             bookAuthorTextView = itemView.findViewById(R.id.book_author_label);
+            bookView = itemView.findViewById(R.id.items);
+            bookView.setOnClickListener(view -> {
+                editedBook = book;
+                Intent intent = new Intent(MainActivity.this, EditBookActivity.class);
+                intent.putExtra(EditBookActivity.EXTRA_EDIT_BOOK_TITLE, bookTitleTextView.getText());
+                intent.putExtra(EditBookActivity.EXTRA_EDIT_BOOK_AUTHOR, bookAuthorTextView.getText());
+                startActivityForResult(intent, EDIT_BOOK_ACTIVITY_REQUEST_CODE);
+            });
+
+            bookView.setOnLongClickListener(view -> {
+                bookViewModel.delete(book);
+                Snackbar.make(findViewById(R.id.coordinator_layout),
+                        getString(R.string.book_deleted),
+                        Snackbar.LENGTH_LONG)
+                        .show();
+                return true;
+            });
         }
 
         public void bind(Book book){
+            this.book = book;
             bookTitleTextView.setText(book.getTitle());
             bookAuthorTextView.setText(book.getAuthor());
         }
